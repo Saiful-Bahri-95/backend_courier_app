@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const serverStartTime = Date.now();
+
+
 // ========================
 // App & config
 // ========================
@@ -82,27 +85,25 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
+  const uptimeMs = Date.now() - serverStartTime;
+
+  const seconds = Math.floor(uptimeMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
   const dbState = mongoose.connection.readyState;
 
-  /*
-    mongoose readyState:
-    0 = disconnected
-    1 = connected
-    2 = connecting
-    3 = disconnecting
-  */
-
-  let dbStatus = "unknown";
-
-  if (dbState === 1) dbStatus = "connected";
-  else if (dbState === 2) dbStatus = "connecting";
-  else dbStatus = "disconnected";
-
-  res.status(200).json({
+  res.json({
     status: dbState === 1 ? "ok" : "error",
     app: "running",
-    database: dbStatus,
-    timestamp: new Date().toISOString()
+    database: dbState === 1 ? "connected" : "disconnected",
+    uptime: {
+      hours,
+      minutes: minutes % 60,
+      seconds: seconds % 60
+    },
+    timestamp: new Date().toISOString(),
   });
 });
+
 

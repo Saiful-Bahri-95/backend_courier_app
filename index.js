@@ -73,3 +73,36 @@ process.on('unhandledRejection', (err) => {
   console.error('❌ Unhandled Rejection:', err.message);
   process.exit(1);
 });
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Backend Courier App is running 🚀",
+    status: "OK"
+  });
+});
+
+app.get("/health", (req, res) => {
+  const dbState = mongoose.connection.readyState;
+
+  /*
+    mongoose readyState:
+    0 = disconnected
+    1 = connected
+    2 = connecting
+    3 = disconnecting
+  */
+
+  let dbStatus = "unknown";
+
+  if (dbState === 1) dbStatus = "connected";
+  else if (dbState === 2) dbStatus = "connecting";
+  else dbStatus = "disconnected";
+
+  res.status(200).json({
+    status: dbState === 1 ? "ok" : "error",
+    app: "running",
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
+});
+

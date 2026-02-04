@@ -112,7 +112,7 @@ const getDocumentById = async (req, res) => {
 const deleteDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.userId; // ✅ dari middleware kamu
+    const userId = req.userId;
 
     const document = await Document.findById(id);
 
@@ -122,8 +122,8 @@ const deleteDocument = async (req, res) => {
       });
     }
 
-    // 🔐 OWNER CHECK (WAJIB)
-    if (document.user.toString() !== userId) {
+    // 🔐 OWNER CHECK (PAKAI createdBy)
+    if (document.createdBy.toString() !== userId) {
       return res.status(403).json({
         message: 'Tidak diizinkan menghapus dokumen ini',
       });
@@ -131,7 +131,7 @@ const deleteDocument = async (req, res) => {
 
     await Document.findByIdAndDelete(id);
 
-    // ✅ sukses delete
+    // ✅ SUCCESS
     return res.status(204).send();
   } catch (error) {
     console.error('❌ Delete document error:', error);
@@ -140,6 +140,7 @@ const deleteDocument = async (req, res) => {
     });
   }
 };
+
 
 
 module.exports = {

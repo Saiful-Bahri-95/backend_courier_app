@@ -109,8 +109,42 @@ const getDocumentById = async (req, res) => {
   }
 };
 
+const deleteDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.userId; // ✅ dari middleware kamu
+
+    const document = await Document.findById(id);
+
+    if (!document) {
+      return res.status(404).json({
+        message: 'Dokumen tidak ditemukan',
+      });
+    }
+
+    // 🔐 OWNER CHECK (WAJIB)
+    if (document.user.toString() !== userId) {
+      return res.status(403).json({
+        message: 'Tidak diizinkan menghapus dokumen ini',
+      });
+    }
+
+    await Document.findByIdAndDelete(id);
+
+    // ✅ sukses delete
+    return res.status(204).send();
+  } catch (error) {
+    console.error('❌ Delete document error:', error);
+    return res.status(500).json({
+      message: 'Gagal menghapus dokumen',
+    });
+  }
+};
+
+
 module.exports = {
   createDocument,
   getDocumentsByUser,
   getDocumentById,
+  deleteDocument,
 };

@@ -91,19 +91,19 @@ authRouter.post('/api/signin', async (req, res) => {
     // JWT TOKEN (INI YANG KRUSIAL)
     // ========================
     const token = jwt.sign(
-      { userId: user._id },               // 🔥 payload konsisten
+      { id: user._id },               // 🔥 payload konsisten
       process.env.JWT_SECRET,             // 🔥 JANGAN HARDCODE
       { expiresIn: '1d' }                 // optional tapi recommended
     );
 
-    // hapus password sebelum kirim ke client
-    const { password: _, ...userWithoutPassword } = user._doc;
-
     return res.status(200).json({
-      message: 'Sign in successful',
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      avatar: user.avatar,
       token,
-      user: userWithoutPassword,
     });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -111,6 +111,7 @@ authRouter.post('/api/signin', async (req, res) => {
     });
   }
 });
+
 
 // ========================
 // EXPORT ROUTER

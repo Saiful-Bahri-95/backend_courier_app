@@ -116,7 +116,7 @@ authRouter.post('/api/signin', async (req, res) => {
 });
 
 // UPDATE PROFILE
-router.patch('/user/profile', authMiddleware, updateProfile);
+authRouter.patch('/user/profile', authMiddleware, updateProfile);
 
 
 // ========================

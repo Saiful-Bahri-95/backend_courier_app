@@ -38,7 +38,7 @@ const createDocument = async (req, res) => {
       signatureUrl,
       receivedDate,
       signedName,
-      createdBy: req.userId,
+      createdBy: req.user.id,
     });
 
     return res.status(201).json({
@@ -55,7 +55,7 @@ const createDocument = async (req, res) => {
 
 const getDocumentsByUser = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.id;
 
     const documents = await Document.find({ createdBy: userId })
       .sort({ createdAt: -1 }); // terbaru di atas
@@ -75,7 +75,7 @@ const getDocumentsByUser = async (req, res) => {
 const getDocumentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.userId;
+    const userId = req.user.id;
 
     // 1️⃣ Validasi ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -87,7 +87,7 @@ const getDocumentById = async (req, res) => {
     // 2️⃣ Cari dokumen + pastikan milik user
     const document = await Document.findOne({
       _id: id,
-      createdBy: userId,
+      createdBy: req.user.id,
     });
 
     if (!document) {
@@ -112,7 +112,7 @@ const getDocumentById = async (req, res) => {
 const deleteDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.userId;
+    const userId = req.user.id;
 
     const document = await Document.findById(id);
 

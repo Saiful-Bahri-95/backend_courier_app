@@ -6,6 +6,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
+const authMiddleware = require('../middleware/auth');
+const { updateProfile } = require('../controllers/user.controller');
+
 // ========================
 // Router instance
 // ========================
@@ -111,6 +114,9 @@ authRouter.post('/api/signin', async (req, res) => {
     });
   }
 });
+
+// UPDATE PROFILE
+router.patch('/user/profile', authMiddleware, updateProfile);
 
 
 // ========================

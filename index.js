@@ -27,7 +27,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(
   cors({
     origin: '*', // ⚠️ bisa dipersempit nanti
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -38,7 +38,8 @@ app.use(
 const authRouter = require('./routes/auth');
 const documentRouter = require('./routes/document.routes');
 
-app.use(authRouter); // /login, /register, dll
+app.use(authRouter); // /login, //register, dll
+app.use('/api', userRouter); 
 app.use('/documents', documentRouter); // /documents/*
 
 // ========================

@@ -36,6 +36,7 @@ app.use(
 // Routes
 // ========================
 const authRouter = require('./routes/auth');
+const userRouter = require('./routes/user');
 const documentRouter = require('./routes/document.routes');
 
 app.use(authRouter); // /login, //register, dll

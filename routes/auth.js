@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const authMiddleware = require('../middlewares/auth.middleware');
+const { authMiddleware } = require('../middlewares/auth.middleware');
 const { updateProfile } = require('../controllers/user.controller');
 
 // ========================

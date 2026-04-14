@@ -5,6 +5,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const nodemailer = require('nodemailer');
 
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { updateProfile } = require('../controllers/user.controller');
@@ -13,6 +14,9 @@ const { updateProfile } = require('../controllers/user.controller');
 // Router instance
 // ========================
 const authRouter = express.Router();
+
+// Simpan OTP sementara (pakai Map, simple untuk testing)
+const otpStore = new Map();
 
 // ========================
 // SIGN UP
@@ -112,6 +116,97 @@ authRouter.post('/api/signin', async (req, res) => {
     return res.status(500).json({
       message: 'Server error',
     });
+  }
+});
+
+// ========================
+// FORGOT PASSWORD - Kirim OTP
+// ========================
+authRouter.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email tidak ditemukan' });
+    }
+
+    // Generate OTP 6 digit
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Simpan OTP + expiry 10 menit
+    otpStore.set(email, {
+      otp,
+      expiry: Date.now() + 10 * 60 * 1000,
+    });
+
+    // Kirim email
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"App Support" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: 'Kode OTP Reset Password',
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Reset Password</h2>
+          <p>Kode OTP kamu:</p>
+          <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
+          <p>Kode berlaku selama <b>10 menit</b>.</p>
+          <p>Abaikan email ini jika kamu tidak meminta reset password.</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({ message: 'OTP berhasil dikirim' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========================
+// RESET PASSWORD - Verifikasi OTP + Ganti Password
+// ========================
+authRouter.post('/api/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Cek OTP
+    const stored = otpStore.get(email);
+    if (!stored) {
+      return res.status(400).json({ message: 'OTP tidak ditemukan, minta ulang' });
+    }
+    if (stored.otp !== otp) {
+      return res.status(400).json({ message: 'OTP salah' });
+    }
+    if (Date.now() > stored.expiry) {
+      otpStore.delete(email);
+      return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
+    }
+
+    // Hash password baru
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    await User.updateOne({ email }, { $set: { password: hashedPassword } });
+
+    // Hapus OTP
+    otpStore.delete(email);
+
+    return res.status(200).json({ message: 'Password berhasil direset' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
   }
 });
 

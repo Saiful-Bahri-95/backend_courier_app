@@ -68,6 +68,109 @@ authRouter.post('/api/signup', async (req, res) => {
 });
 
 // ========================
+// SEND REGISTER OTP
+// ========================
+authRouter.post('/api/send-register-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email wajib diisi' });
+    }
+
+    // Cek email sudah terdaftar
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email sudah terdaftar' });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Simpan OTP + expiry 10 menit
+    otpStore.set(`register_${email}`, {
+      otp,
+      expiry: Date.now() + 10 * 60 * 1000,
+    });
+
+    // Kirim email
+    const { error: mailError } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: email,
+      subject: 'Kode OTP Verifikasi Email',
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Verifikasi Email</h2>
+          <p>Kode OTP pendaftaran kamu:</p>
+          <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
+          <p>Kode berlaku selama <b>10 menit</b>.</p>
+          <p>Abaikan email ini jika kamu tidak mendaftar.</p>
+        </div>
+      `,
+    });
+
+    if (mailError) {
+      console.error('❌ Mail error:', mailError);
+      return res.status(500).json({ message: 'Gagal kirim OTP' });
+    }
+
+    return res.status(200).json({ message: 'OTP berhasil dikirim' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========================
+// VERIFY REGISTER OTP + BUAT AKUN
+// ========================
+authRouter.post('/api/verify-register-otp', async (req, res) => {
+  try {
+    const { fullname, email, password, otp } = req.body;
+
+    if (!fullname || !email || !password || !otp) {
+      return res.status(400).json({ message: 'Semua field wajib diisi' });
+    }
+
+    // Cek OTP
+    const stored = otpStore.get(`register_${email}`);
+    if (!stored) {
+      return res.status(400).json({ message: 'OTP tidak ditemukan, minta ulang' });
+    }
+    if (stored.otp !== otp) {
+      return res.status(400).json({ message: 'OTP salah' });
+    }
+    if (Date.now() > stored.expiry) {
+      otpStore.delete(`register_${email}`);
+      return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
+    }
+
+    // Cek email sudah terdaftar (double check)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email sudah terdaftar' });
+    }
+
+    // Hash password & buat akun
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = new User({ fullname, email, password: hashedPassword });
+    await user.save();
+
+    // Hapus OTP
+    otpStore.delete(`register_${email}`);
+
+    return res.status(201).json({ message: 'Akun berhasil dibuat' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========================
 // SIGN IN
 // ========================
 authRouter.post('/api/signin', async (req, res) => {

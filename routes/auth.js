@@ -125,22 +125,27 @@ authRouter.post('/api/signin', async (req, res) => {
 authRouter.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    console.log('📩 Request masuk:', email);
 
     const user = await User.findOne({ email });
+    console.log('👤 User found:', user ? 'yes' : 'no');
+
     if (!user) {
       return res.status(404).json({ message: 'Email tidak ditemukan' });
     }
 
-    // Generate OTP 6 digit
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('🔢 OTP generated:', otp);
 
-    // Simpan OTP + expiry 10 menit
     otpStore.set(email, {
       otp,
       expiry: Date.now() + 10 * 60 * 1000,
     });
 
-    // Kirim email
+    console.log('📧 Mulai kirim email...');
+    console.log('GMAIL_USER:', process.env.GMAIL_USER);
+    console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
+
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -159,16 +164,16 @@ authRouter.post('/api/forgot-password', async (req, res) => {
           <p>Kode OTP kamu:</p>
           <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
           <p>Kode berlaku selama <b>10 menit</b>.</p>
-          <p>Abaikan email ini jika kamu tidak meminta reset password.</p>
         </div>
       `,
     });
 
+    console.log('✅ Email terkirim!');
     return res.status(200).json({ message: 'OTP berhasil dikirim' });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('❌ Error:', error.message);
+    return res.status(500).json({ message: error.message });
   }
 });
 

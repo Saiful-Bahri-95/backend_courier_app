@@ -5,10 +5,13 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const nodemailer = require('nodemailer');
+
 
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { updateProfile } = require('../controllers/user.controller');
+
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ========================
 // Router instance
@@ -143,47 +146,27 @@ authRouter.post('/api/forgot-password', async (req, res) => {
     });
 
     console.log('📧 Mulai kirim email...');
-console.log('GMAIL_USER:', process.env.GMAIL_USER);
-console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
+    console.log('GMAIL_USER:', process.env.GMAIL_USER);
+    console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
 
-try {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // TLS
-    requireTLS: true,
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-  });
+    const { error: mailError } = await resend.emails.send({
+      from: 'onboarding@resend.dev', // pakai domain default resend dulu
+      to: email,
+      subject: 'Kode OTP Reset Password',
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Reset Password</h2>
+          <p>Kode OTP kamu:</p>
+          <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
+          <p>Kode berlaku selama <b>10 menit</b>.</p>
+        </div>
+      `,
+    });
 
-  // Verify koneksi dulu
-  await transporter.verify();
-  console.log('✅ Transporter verified!');
-
-  await transporter.sendMail({
-    from: `"App Support" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: 'Kode OTP Reset Password',
-    html: `
-      <div style="font-family: Arial; padding: 20px;">
-        <h2>Reset Password</h2>
-        <p>Kode OTP kamu:</p>
-        <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
-        <p>Kode berlaku selama <b>10 menit</b>.</p>
-      </div>
-    `,
-  });
-
-  console.log('✅ Email terkirim!');
-} catch (mailError) {
-  console.error('❌ Mail error:', mailError.message);
-  return res.status(500).json({ message: 'Gagal kirim email: ' + mailError.message });
-}
+    if (mailError) {
+      console.error('❌ Mail error:', mailError);
+      return res.status(500).json({ message: 'Gagal kirim email' });
+    }
 
   } catch (error) {
     console.error('❌ Error:', error.message);

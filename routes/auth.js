@@ -152,6 +152,9 @@ authRouter.post('/api/forgot-password', async (req, res) => {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_PASS,
       },
+      connectionTimeout: 5000, // 5 detik
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
     });
 
     await transporter.sendMail({

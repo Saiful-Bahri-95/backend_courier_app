@@ -146,11 +146,9 @@ authRouter.post('/api/forgot-password', async (req, res) => {
     });
 
     console.log('📧 Mulai kirim email...');
-    console.log('GMAIL_USER:', process.env.GMAIL_USER);
-    console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
 
     const { error: mailError } = await resend.emails.send({
-      from: 'onboarding@resend.dev', // pakai domain default resend dulu
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Kode OTP Reset Password',
       html: `
@@ -167,6 +165,10 @@ authRouter.post('/api/forgot-password', async (req, res) => {
       console.error('❌ Mail error:', mailError);
       return res.status(500).json({ message: 'Gagal kirim email' });
     }
+
+    // ✅ INI YANG KURANG!
+    console.log('✅ Email terkirim!');
+    return res.status(200).json({ message: 'OTP berhasil dikirim' });
 
   } catch (error) {
     console.error('❌ Error:', error.message);

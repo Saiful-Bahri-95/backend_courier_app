@@ -143,36 +143,46 @@ authRouter.post('/api/forgot-password', async (req, res) => {
     });
 
     console.log('📧 Mulai kirim email...');
-    console.log('GMAIL_USER:', process.env.GMAIL_USER);
-    console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
+console.log('GMAIL_USER:', process.env.GMAIL_USER);
+console.log('GMAIL_PASS exists:', !!process.env.GMAIL_PASS);
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-      },
-      connectionTimeout: 5000, // 5 detik
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-    });
+try {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // SSL
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+  });
 
-    await transporter.sendMail({
-      from: `"App Support" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: 'Kode OTP Reset Password',
-      html: `
-        <div style="font-family: Arial; padding: 20px;">
-          <h2>Reset Password</h2>
-          <p>Kode OTP kamu:</p>
-          <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
-          <p>Kode berlaku selama <b>10 menit</b>.</p>
-        </div>
-      `,
-    });
+  // Verify koneksi dulu
+  await transporter.verify();
+  console.log('✅ Transporter verified!');
 
-    console.log('✅ Email terkirim!');
-    return res.status(200).json({ message: 'OTP berhasil dikirim' });
+  await transporter.sendMail({
+    from: `"App Support" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: 'Kode OTP Reset Password',
+    html: `
+      <div style="font-family: Arial; padding: 20px;">
+        <h2>Reset Password</h2>
+        <p>Kode OTP kamu:</p>
+        <h1 style="color: #0A68FF; letter-spacing: 5px;">${otp}</h1>
+        <p>Kode berlaku selama <b>10 menit</b>.</p>
+      </div>
+    `,
+  });
+
+  console.log('✅ Email terkirim!');
+} catch (mailError) {
+  console.error('❌ Mail error:', mailError.message);
+  return res.status(500).json({ message: 'Gagal kirim email: ' + mailError.message });
+}
 
   } catch (error) {
     console.error('❌ Error:', error.message);

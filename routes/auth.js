@@ -128,17 +128,14 @@ authRouter.post('/api/signin', async (req, res) => {
 authRouter.post('/api/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
-    console.log('📩 Request masuk:', email);
 
     const user = await User.findOne({ email });
-    console.log('👤 User found:', user ? 'yes' : 'no');
 
     if (!user) {
       return res.status(404).json({ message: 'Email tidak ditemukan' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('🔢 OTP generated:', otp);
 
     otpStore.set(email, {
       otp,

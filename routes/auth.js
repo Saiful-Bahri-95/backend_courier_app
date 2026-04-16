@@ -24,48 +24,48 @@ const otpStore = new Map();
 // ========================
 // SIGN UP
 // ========================
-authRouter.post('/api/signup', async (req, res) => {
-  try {
-    const { fullname, email, password } = req.body;
+// authRouter.post('/api/signup', async (req, res) => {
+//   try {
+//     const { fullname, email, password } = req.body;
 
-    // validasi input sederhana
-    if (!fullname || !email || !password) {
-      return res.status(400).json({
-        message: 'Fullname, email, dan password wajib diisi',
-      });
-    }
+//     // validasi input sederhana
+//     if (!fullname || !email || !password) {
+//       return res.status(400).json({
+//         message: 'Fullname, email, dan password wajib diisi',
+//       });
+//     }
 
-    // cek email sudah terdaftar
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        message: 'User already exists',
-      });
-    }
+//     // cek email sudah terdaftar
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res.status(400).json({
+//         message: 'User already exists',
+//       });
+//     }
 
-    // hashing password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+//     // hashing password
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // simpan user baru
-    const user = new User({
-      fullname,
-      email,
-      password: hashedPassword,
-    });
+//     // simpan user baru
+//     const user = new User({
+//       fullname,
+//       email,
+//       password: hashedPassword,
+//     });
 
-    await user.save();
+//     await user.save();
 
-    return res.status(201).json({
-      message: 'User created successfully',
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: 'Server error',
-    });
-  }
-});
+//     return res.status(201).json({
+//       message: 'User created successfully',
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       message: 'Server error',
+//     });
+//   }
+// });
 
 // ========================
 // SEND REGISTER OTP

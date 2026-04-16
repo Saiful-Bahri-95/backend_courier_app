@@ -95,7 +95,7 @@ authRouter.post('/api/send-register-otp', async (req, res) => {
 
     // Kirim email
     const { error: mailError } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'noreply@saifulbahri-ai.online',
       to: email,
       subject: 'Kode OTP Verifikasi Email',
       html: `
@@ -248,7 +248,7 @@ authRouter.post('/api/forgot-password', async (req, res) => {
     console.log('📧 Mulai kirim email...');
 
     const { error: mailError } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'noreply@saifulbahri-ai.online',
       to: email,
       subject: 'Kode OTP Reset Password',
       html: `

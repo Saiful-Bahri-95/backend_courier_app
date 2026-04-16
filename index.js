@@ -37,11 +37,11 @@ app.use(
 // ========================
 const authRouter = require('./routes/auth');
 const documentRouter = require('./routes/document.routes');
-// const uploadRouter = require('./routes/upload.routes');
+const uploadRouter = require('./routes/upload.routes');
 
 app.use(authRouter); // /login, //register, dll
 app.use('/documents', documentRouter); // /documents/*
-// app.use('/api', uploadRouter);
+app.use('/api', uploadRouter);
 
 // ========================
 // Global error handler

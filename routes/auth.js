@@ -22,52 +22,6 @@ const authRouter = express.Router();
 const otpStore = new Map();
 
 // ========================
-// SIGN UP
-// ========================
-// authRouter.post('/api/signup', async (req, res) => {
-//   try {
-//     const { fullname, email, password } = req.body;
-
-//     // validasi input sederhana
-//     if (!fullname || !email || !password) {
-//       return res.status(400).json({
-//         message: 'Fullname, email, dan password wajib diisi',
-//       });
-//     }
-
-//     // cek email sudah terdaftar
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({
-//         message: 'User already exists',
-//       });
-//     }
-
-//     // hashing password
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-
-//     // simpan user baru
-//     const user = new User({
-//       fullname,
-//       email,
-//       password: hashedPassword,
-//     });
-
-//     await user.save();
-
-//     return res.status(201).json({
-//       message: 'User created successfully',
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       message: 'Server error',
-//     });
-//   }
-// });
-
-// ========================
 // SEND REGISTER OTP
 // ========================
 authRouter.post('/api/send-register-otp', async (req, res) => {
@@ -307,6 +261,84 @@ authRouter.post('/api/reset-password', async (req, res) => {
     otpStore.delete(email);
 
     return res.status(200).json({ message: 'Password berhasil direset' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========================
+// REPORT BUG - Kirim Email
+// ========================
+authRouter.post('/api/report-bug', authMiddleware, async (req, res) => {
+  try {
+    const { category, priority, description, steps, reporterName, reporterEmail } = req.body;
+
+    if (!category || !description) {
+      return res.status(400).json({ message: 'Kategori dan deskripsi wajib diisi' });
+    }
+
+    const { error: mailError } = await resend.emails.send({
+      from: `"Courier App Bug Report" <noreply@saifulbahri-ai.online>`,
+      to: 'saiful.bahri2004@gmail.com', // ← ganti dengan email developer/admin
+      subject: `[BUG REPORT] ${category} - Prioritas ${priority}`,
+      html: `
+        <div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #1A3C8F; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h2 style="color: white; margin: 0;">🐛 Bug Report</h2>
+            <p style="color: rgba(255,255,255,0.7); margin: 5px 0 0;">Courier App - PT KGI Sekuritas Indonesia</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr style="background: #F1F5F9;">
+              <td style="padding: 10px 14px; font-weight: bold; width: 140px; color: #64748B; font-size: 13px;">Pelapor</td>
+              <td style="padding: 10px 14px; font-size: 13px;">${reporterName} (${reporterEmail})</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; font-weight: bold; color: #64748B; font-size: 13px;">Kategori</td>
+              <td style="padding: 10px 14px; font-size: 13px;">${category}</td>
+            </tr>
+            <tr style="background: #F1F5F9;">
+              <td style="padding: 10px 14px; font-weight: bold; color: #64748B; font-size: 13px;">Prioritas</td>
+              <td style="padding: 10px 14px; font-size: 13px;">
+                <span style="
+                  background: ${priority === 'Tinggi' ? '#FEF2F2' : priority === 'Sedang' ? '#FFF7ED' : '#F0FDF4'};
+                  color: ${priority === 'Tinggi' ? '#DC2626' : priority === 'Sedang' ? '#D97706' : '#16A34A'};
+                  padding: 3px 10px;
+                  border-radius: 20px;
+                  font-weight: bold;
+                  font-size: 12px;
+                ">${priority}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; font-weight: bold; color: #64748B; font-size: 13px;">Tanggal</td>
+              <td style="padding: 10px 14px; font-size: 13px;">${new Date().toLocaleString('id-ID')}</td>
+            </tr>
+          </table>
+
+          <div style="margin-bottom: 16px;">
+            <p style="font-weight: bold; color: #1E293B; margin-bottom: 8px;">📝 Deskripsi Bug:</p>
+            <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.6; color: #1E293B;">
+              ${description}
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #CBD5E1; margin: 20px 0;">
+          <p style="font-size: 11px; color: #94A3B8; text-align: center;">
+            Email ini dikirim otomatis dari Courier App
+          </p>
+        </div>
+      `,
+    });
+
+    if (mailError) {
+      console.error('❌ Bug report mail error:', mailError);
+      return res.status(500).json({ message: 'Gagal mengirim laporan' });
+    }
+
+    return res.status(200).json({ message: 'Laporan berhasil dikirim' });
 
   } catch (error) {
     console.error(error);
